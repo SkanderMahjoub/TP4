@@ -1,6 +1,10 @@
 name: Python package
 
-on: [push]
+on:
+  push:
+    branches: ['**']      # déclenche sur toutes les branches
+    tags: ['**']          # (optionnel) et tags
+  workflow_dispatch:       # (optionnel) bouton "Run workflow"
 
 jobs:
   build:
@@ -8,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0   # nécessaire pour git bisect
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -16,7 +20,14 @@ jobs:
           python-version: "3.9"
 
       - name: Install packages
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run tests
-        run: python manage.py test
+      - name: Run git bisect to detect first bad commit
+        env:
+          GOOD_HASH: e4cfc6f77ebbe2e23550ddab682316ab4ce1c03c
+          BAD_HASH: ${{ github.sha }}
+          TEST_CMD: python manage.py test
+        run: |
+          python myscript.py
